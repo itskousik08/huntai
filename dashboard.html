@@ -1,0 +1,747 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>HuntAI | User Dashboard</title>
+    <!-- Dependencies -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script defer src="https://cdn.jsdelivr.net/npm/alpinejs@3.x.x/dist/cdn.min.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-app.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-auth.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-firestore.js"></script>
+    <script src="js/config.js"></script>
+    <link rel="stylesheet" href="css/style.css">
+    
+    <style>
+        [x-cloak] { display: none !important; }
+        /* Premium Scrollbar */
+        ::-webkit-scrollbar { width: 6px; }
+        ::-webkit-scrollbar-track { background: #f1f5f9; }
+        ::-webkit-scrollbar-thumb { background: #cbd5e1; border-radius: 10px; }
+        ::-webkit-scrollbar-thumb:hover { background: #94a3b8; }
+    </style>
+</head>
+<body x-data="dashboardApp()" x-init="initApp()" x-cloak class="text-slate-800 bg-slate-50 antialiased font-sans">
+
+    <!-- Animated Background -->
+    <div class="bg-gradient-mesh"></div>
+
+    <!-- Mobile Header -->
+    <div class="md:hidden fixed top-0 w-full bg-white/80 backdrop-blur border-b z-40 px-4 py-3 flex justify-between items-center">
+        <div class="flex items-center gap-2">
+            <img src="logo.png" alt="HuntAI" class="h-8 w-auto object-contain">
+            <span class="font-bold text-lg text-slate-800">HuntAI</span>
+        </div>
+        <button @click="sidebarOpen = !sidebarOpen" class="p-2 text-slate-600 bg-slate-100 rounded-lg">
+            <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 6h16M4 12h16M4 18h16"></path></svg>
+        </button>
+    </div>
+
+    <div class="flex h-screen overflow-hidden pt-16 md:pt-0">
+        
+        <!-- SIDEBAR (Restored Premium Look) -->
+        <aside :class="sidebarOpen ? 'translate-x-0' : '-translate-x-full'" 
+               class="fixed inset-y-0 left-0 z-50 w-72 bg-slate-900 text-white transition-transform duration-300 md:relative md:translate-x-0 shadow-2xl flex flex-col">
+            
+            <!-- Logo Area -->
+            <div class="p-8">
+                <div class="flex items-center gap-3">
+                    <img src="logo.png" alt="HuntAI" class="h-12 w-auto object-contain">
+                    <div>
+                        <h1 class="text-xl font-bold tracking-tight">HuntAI</h1>
+                        <p class="text-xs text-slate-400">Intelligence Engine</p>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Navigation -->
+            <nav class="flex-1 px-4 space-y-2 overflow-y-auto">
+                
+                <p class="px-4 text-xs font-bold text-slate-500 uppercase tracking-wider mb-2 mt-4">Core Tools</p>
+                
+                <button @click="activeTab = 'generate'; sidebarOpen = false" 
+                        :class="activeTab === 'generate' ? 'bg-blue-600 text-white shadow-lg shadow-blue-900/50' : 'text-slate-400 hover:bg-slate-800 hover:text-white'" 
+                        class="w-full text-left px-4 py-3.5 rounded-xl transition flex items-center gap-3 group">
+                    <svg class="w-5 h-5 transition group-hover:scale-110" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"></path></svg>
+                    <span class="font-medium">Instant Lead Search</span>
+                </button>
+
+                <button @click="activeTab = 'advanced'; sidebarOpen = false" 
+                        :class="activeTab === 'advanced' ? 'bg-blue-600 text-white shadow-lg shadow-blue-900/50' : 'text-slate-400 hover:bg-slate-800 hover:text-white'" 
+                        class="w-full text-left px-4 py-3.5 rounded-xl transition flex items-center gap-3 group">
+                    <svg class="w-5 h-5 transition group-hover:scale-110" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19.428 15.428a2 2 0 00-1.022-.547l-2.387-.477a6 6 0 00-3.86.517l-.318.158a6 6 0 01-3.86.517L6.05 15.21a2 2 0 00-1.806.547M8 4h8l-1 1v5.172a2 2 0 00.586 1.414l5 5c1.26 1.26.367 3.414-1.415 3.414H4.828c-1.782 0-2.674-2.154-1.414-3.414l5-5A2 2 0 009 10.172V5L8 4z"></path></svg>
+                    <span class="font-medium">Advanced AI Leads </span>
+                </button>
+
+                <p class="px-4 text-xs font-bold text-slate-500 uppercase tracking-wider mb-2 mt-6">Account</p>
+
+               <!-- HELP & SUPPORT BUTTON -->
+<button @click="activeTab = 'help'; sidebarOpen = false" 
+        :class="activeTab === 'help' ? 'bg-blue-600 text-white shadow-lg shadow-blue-900/50' : 'text-slate-400 hover:bg-slate-800 hover:text-white'" 
+        class="w-full text-left px-4 py-3.5 rounded-xl transition flex items-center gap-3 group">
+    <svg class="w-5 h-5 transition group-hover:scale-110" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M18.364 5.636l-3.536 3.536m0 5.656l3.536 3.536M9.172 9.172L5.636 5.636m3.536 9.192l-3.536 3.536M21 12a9 9 0 11-18 0 9 9 0 0118 0zm-5 0a4 4 0 11-8 0 4 4 0 018 0z"></path></svg>
+    <span class="font-medium">Help & Support</span>
+</button>
+
+                <button @click="activeTab = 'billing'; sidebarOpen = false" 
+                        :class="activeTab === 'billing' ? 'bg-blue-600 text-white shadow-lg shadow-blue-900/50' : 'text-slate-400 hover:bg-slate-800 hover:text-white'" 
+                        class="w-full text-left px-4 py-3.5 rounded-xl transition flex items-center gap-3 group">
+                    <svg class="w-5 h-5 transition group-hover:scale-110" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 10h18M7 15h1m4 0h1m-7 4h12a3 3 0 003-3V8a3 3 0 00-3-3H6a3 3 0 00-3 3v8a3 3 0 003 3z"></path></svg>
+                    <span class="font-medium">Plans & Billing</span>
+                </button>
+            </nav>
+            
+            <!-- Credit Footer -->
+            <div class="p-6 border-t border-slate-800 bg-slate-900/50">
+                <div class="flex items-center justify-between mb-3">
+                    <span class="text-xs font-bold text-slate-500 uppercase">Balance</span>
+                    <span class="font-bold text-blue-400 text-lg"><span x-text="userCredits"></span> Credits </span>
+                </div>
+                <div class="w-full bg-slate-800 h-2 rounded-full overflow-hidden">
+                    <div class="bg-blue-500 h-full rounded-full w-3/4 animate-pulse"></div>
+                </div>
+                <button @click="logout" class="mt-4 w-full text-left text-sm text-slate-400 hover:text-white flex items-center gap-2 transition">
+                    <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17 16l4-4m0 0l-4-4m4 4H7m6 4v1a3 3 0 01-3 3H6a3 3 0 01-3-3V7a3 3 0 013-3h4a3 3 0 013 3v1"></path></svg>
+                    Logout Securely
+                </button>
+            </div>
+        </aside>
+
+        <!-- Overlay for Mobile -->
+        <div x-show="sidebarOpen" @click="sidebarOpen = false" class="fixed inset-0 bg-black/50 z-40 md:hidden backdrop-blur-sm"></div>
+
+        <!-- Main Content -->
+        <main class="flex-1 overflow-y-auto p-6 md:p-10 relative">
+
+           
+            <!-- TAB 1: INSTANT GENERATOR -->
+            <div x-show="activeTab === 'generate'" class="fade-in-up max-w-6xl mx-auto">
+                <header class="mb-10">
+                    <h2 class="text-3xl font-bold text-slate-900">Instant Lead Search</h2>
+                    <p class="text-slate-500 mt-2">AI-Verified Leads. <span class="text-blue-600 font-bold">6 Credits</span> per unique lead.</p>
+                </header>
+
+                <!-- Filter Card -->
+                <div class="glass-card p-8 rounded-3xl mb-8 border border-white/50 shadow-xl shadow-blue-100/50">
+                    <div class="grid grid-cols-1 md:grid-cols-3 gap-6">
+                        <!-- Category -->
+                        <div class="space-y-2">
+                            <label class="text-xs font-bold text-slate-500 uppercase tracking-wider">Target Industry</label>
+                            <div class="relative">
+                                <select x-model="filters.category" class="w-full appearance-none bg-white border border-slate-200 text-slate-800 font-bold py-3.5 px-4 pr-8 rounded-xl focus:outline-none focus:ring-2 focus:ring-blue-500 shadow-sm transition">
+                                    <option value="">Select Niche...</option>
+                                    <template x-for="cat in categories" :key="cat">
+                                        <option :value="cat" x-text="cat"></option>
+                                    </template>
+                                </select>
+                                <div class="pointer-events-none absolute inset-y-0 right-0 flex items-center px-2 text-slate-500"><svg class="h-4 w-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7"></path></svg></div>
+                            </div>
+                        </div>
+                        <!-- Country -->
+                        <div class="space-y-2">
+                            <label class="text-xs font-bold text-slate-500 uppercase tracking-wider">Location</label>
+                            <div class="relative">
+                                <select x-model="filters.country" class="w-full appearance-none bg-white border border-slate-200 text-slate-800 font-bold py-3.5 px-4 pr-8 rounded-xl focus:outline-none focus:ring-2 focus:ring-blue-500 shadow-sm transition">
+                                    <option value="">Select Country...</option>
+                                    <template x-for="c in countries" :key="c">
+                                        <option :value="c" x-text="c"></option>
+                                    </template>
+                                </select>
+                                <div class="pointer-events-none absolute inset-y-0 right-0 flex items-center px-2 text-slate-500"><svg class="h-4 w-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7"></path></svg></div>
+                            </div>
+                        </div>
+                        <!-- Quantity -->
+                        <div class="space-y-2">
+                            <label class="text-xs font-bold text-slate-500 uppercase tracking-wider">Quantity</label>
+                            <div class="flex items-center bg-white border border-slate-200 rounded-xl p-1 shadow-sm">
+                                <button @click="if(qty>1) qty--" class="p-2.5 hover:bg-slate-100 rounded-lg text-slate-500 transition">-</button>
+                                <input type="number" x-model="qty" class="w-full text-center bg-transparent outline-none font-bold text-slate-800">
+                                <button @click="qty++" class="p-2.5 hover:bg-slate-100 rounded-lg text-slate-500 transition">+</button>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="mt-8 pt-6 border-t border-slate-100 flex flex-col md:flex-row items-center justify-between gap-4">
+                        <div class="text-sm text-slate-500 font-medium">
+                            Estimated Cost: <span class="font-bold text-slate-900 text-lg" x-text="qty * 6"></span> Credits
+                        </div>
+                        <button @click="generateLeads" :disabled="loading" class="w-full md:w-auto bg-blue-600 text-white px-8 py-3.5 rounded-xl font-bold shadow-lg shadow-blue-500/30 hover:bg-blue-700 hover:shadow-blue-600/40 transition transform active:scale-95 disabled:opacity-70 disabled:cursor-not-allowed flex items-center justify-center gap-2">
+                            <span x-show="loading" class="animate-spin h-5 w-5 border-2 border-white border-t-transparent rounded-full"></span>
+                            <span x-text="loading ? 'Mining Database...' : 'Start Extraction'"></span>
+                        </button>
+                    </div>
+                </div>
+
+                <!-- Results Table -->
+                <div x-show="leads.length > 0" class="fade-in-up delay-100">
+                    <div class="flex justify-between items-center mb-4 px-2">
+                        <h3 class="font-bold text-lg text-slate-800">Extraction Results <span class="text-slate-400 font-normal text-sm ml-2" x-text="'(' + leads.length + ' found)'"></span></h3>
+                        <button @click="exportCSV" class="flex items-center gap-2 text-sm font-bold text-blue-600 bg-blue-50 px-4 py-2 rounded-lg hover:bg-blue-100 transition">
+                            <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4"></path></svg>
+                            Export CSV
+                        </button>
+                    </div>
+                    
+                    <div class="bg-white rounded-2xl shadow-sm border border-slate-100 overflow-hidden">
+                        <table class="w-full text-left text-sm">
+                            <thead class="bg-slate-50 border-b border-slate-100 text-slate-500 uppercase text-xs font-semibold">
+                                <tr>
+                                    <th class="p-5">Business</th>
+                                    <th class="p-5">Contact</th>
+                                    <th class="p-5">Social & Web</th>
+                                </tr>
+                            </thead>
+                            <tbody class="divide-y divide-slate-50">
+                                <template x-for="lead in leads" :key="lead.id">
+                                    <tr class="hover:bg-blue-50/50 transition duration-150">
+                                        <td class="p-5">
+                                            <div class="font-bold text-slate-900 text-base" x-text="lead.name"></div>
+                                            <div class="text-xs text-slate-400 mt-1" x-text="lead.category + ' • ' + lead.country"></div>
+                                        </td>
+                                        <td class="p-5">
+                                            <div class="flex items-center gap-2 text-slate-600 mb-1">
+                                                <svg class="w-4 h-4 text-slate-400" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 8l7.89 5.26a2 2 0 002.22 0L21 8M5 19h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v10a2 2 0 002 2z"></path></svg>
+                                                <span x-text="lead.gmail"></span>
+                                            </div>
+                                            <div class="flex items-center gap-2 text-slate-600">
+                                                <svg class="w-4 h-4 text-slate-400" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 5a2 2 0 012-2h3.28a1 1 0 01.948.684l1.498 4.493a1 1 0 01-.502 1.21l-2.257 1.13a11.042 11.042 0 005.516 5.516l1.13-2.257a1 1 0 011.21-.502l4.493 1.498a1 1 0 01.684.949V19a2 2 0 01-2 2h-1C9.716 21 3 14.284 3 6V5z"></path></svg>
+                                                <span x-text="lead.phone"></span>
+                                            </div>
+                                        </td>
+                                        <td class="p-5">
+                                            <div class="flex gap-2">
+                                                <a :href="'http://'+lead.website" target="_blank" class="px-3 py-1 bg-slate-100 text-slate-600 rounded-lg text-xs font-bold hover:bg-slate-200 transition">Website</a>
+                                                <template x-if="lead.facebook"><a :href="lead.facebook" target="_blank" class="px-3 py-1 bg-blue-50 text-blue-600 rounded-lg text-xs font-bold hover:bg-blue-100 transition">FB</a></template>
+                                                <template x-if="lead.linkedin"><a :href="lead.linkedin" target="_blank" class="px-3 py-1 bg-blue-100 text-blue-800 rounded-lg text-xs font-bold hover:bg-blue-200 transition">LI</a></template>
+                                            </div>
+                                        </td>
+                                    </tr>
+                                </template>
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+            </div>
+
+<!-- TAB 2: ADVANCED AI (Premium UI Restored) -->
+<div x-show="activeTab === 'advanced'" class="fade-in-up max-w-7xl mx-auto">
+    
+    <header class="mb-12">
+        <h2 class="text-4xl font-bold text-slate-900 tracking-tight">Advanced AI Intelligence</h2>
+        <p class="text-slate-500 mt-3 text-lg">Deploy autonomous agents for deep-web extraction. <span class="text-blue-600 font-bold bg-blue-50 px-2 py-0.5 rounded-lg">10 Credits</span> per verified lead.</p>
+    </header>
+
+    <div class="grid lg:grid-cols-12 gap-8 mb-16">
+        
+        <!-- Left: Request Form (Glassmorphism) -->
+        <div class="lg:col-span-7">
+            <div class="bg-white p-8 md:p-10 rounded-[2rem] shadow-xl shadow-slate-200/50 border border-slate-100 relative overflow-hidden">
+                <!-- Background decoration -->
+                <div class="absolute top-0 right-0 w-64 h-64 bg-blue-50 rounded-full blur-3xl opacity-60 -mr-20 -mt-20 pointer-events-none"></div>
+
+                <div class="relative z-10 space-y-8">
+                    
+                    <div class="grid md:grid-cols-2 gap-6">
+                        <div class="space-y-2">
+                            <label class="text-xs font-bold text-slate-500 uppercase tracking-wider pl-1">Target Niche</label>
+                            <input x-model="aiForm.niche" type="text" placeholder="e.g. Solar Panel Installers" class="w-full text-lg font-bold text-slate-800 border-b-2 border-slate-200 bg-transparent py-3 focus:border-blue-600 outline-none transition placeholder-slate-300">
+                        </div>
+                        <div class="space-y-2">
+                            <label class="text-xs font-bold text-slate-500 uppercase tracking-wider pl-1">Target Location</label>
+                            <input x-model="aiForm.country" type="text" placeholder="e.g. California, USA" class="w-full text-lg font-bold text-slate-800 border-b-2 border-slate-200 bg-transparent py-3 focus:border-blue-600 outline-none transition placeholder-slate-300">
+                        </div>
+                    </div>
+
+                    <div class="space-y-2">
+                        <label class="text-xs font-bold text-slate-500 uppercase tracking-wider pl-1">Detailed Requirements</label>
+                        <textarea x-model="aiForm.desc" rows="4" placeholder="Be specific: 'Need Owner/CEO direct email and LinkedIn profile. Company must have 10+ employees...'" class="w-full p-5 rounded-2xl bg-slate-50 border border-slate-200 focus:bg-white focus:border-blue-500 focus:ring-4 focus:ring-blue-500/10 outline-none transition text-slate-700 leading-relaxed resize-none"></textarea>
+                    </div>
+
+                    <div class="flex items-end gap-6 pt-2">
+                        <div class="space-y-2 w-32">
+                            <label class="text-xs font-bold text-slate-500 uppercase tracking-wider pl-1">Quantity</label>
+                            <div class="relative">
+                                <input type="number" x-model="aiForm.qty" class="w-full p-4 rounded-2xl bg-white border-2 border-slate-200 font-bold text-center text-xl text-slate-800 focus:border-blue-500 outline-none transition">
+                            </div>
+                        </div>
+                        <button @click="submitAIRequest" class="flex-1 bg-slate-900 text-white h-[60px] rounded-2xl font-bold text-lg shadow-xl shadow-slate-900/20 hover:bg-blue-600 hover:shadow-blue-600/30 transition transform active:scale-[0.98] flex items-center justify-center gap-3 group">
+                            <span>Launch AI Agents</span>
+                            <svg class="w-5 h-5 text-slate-400 group-hover:text-white transition" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 10V3L4 14h7v7l9-11h-7z"></path></svg>
+                        </button>
+                    </div>
+                    
+                    <div class="text-center">
+                        <span class="text-xs font-bold text-slate-400 bg-slate-100 px-3 py-1 rounded-full">Estimated Cost: <span class="text-slate-900" x-text="aiForm.qty * 10"></span> Credits</span>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Right: How it Works (Premium Visuals) -->
+        <div class="lg:col-span-5 flex flex-col justify-center">
+            <div class="bg-gradient-to-br from-blue-600 to-indigo-700 rounded-[2rem] p-8 md:p-10 text-white shadow-2xl relative overflow-hidden">
+                <!-- Abstract Shapes -->
+                <div class="absolute top-0 right-0 w-64 h-64 bg-white opacity-5 rounded-full blur-3xl -mr-16 -mt-16"></div>
+                <div class="absolute bottom-0 left-0 w-40 h-40 bg-blue-400 opacity-20 rounded-full blur-2xl -ml-10 -mb-10"></div>
+
+                <h3 class="text-2xl font-bold mb-8 relative z-10">Intelligence Workflow</h3>
+                
+                <div class="space-y-8 relative z-10">
+                    <div class="flex gap-5 group">
+                        <div class="w-12 h-12 rounded-2xl bg-white/10 border border-white/20 flex items-center justify-center text-xl font-bold shadow-lg backdrop-blur-sm group-hover:bg-white group-hover:text-blue-600 transition duration-300">1</div>
+                        <div>
+                            <h4 class="font-bold text-lg">Deep-Web Scan</h4>
+                            <p class="text-blue-100 text-sm leading-relaxed mt-1">Our autonomous agents scan 50+ premium sources & directories simultaneously.</p>
+                        </div>
+                    </div>
+                    
+                    <div class="flex gap-5 group">
+                        <div class="w-12 h-12 rounded-2xl bg-white/10 border border-white/20 flex items-center justify-center text-xl font-bold shadow-lg backdrop-blur-sm group-hover:bg-white group-hover:text-blue-600 transition duration-300">2</div>
+                        <div>
+                            <h4 class="font-bold text-lg">5-Layer Verification</h4>
+                            <p class="text-blue-100 text-sm leading-relaxed mt-1">AI validates email deliverability, phone active status, and social profiles.</p>
+                        </div>
+                    </div>
+
+                    <div class="flex gap-5 group">
+                        <div class="w-12 h-12 rounded-2xl bg-white/10 border border-white/20 flex items-center justify-center text-xl font-bold shadow-lg backdrop-blur-sm group-hover:bg-white group-hover:text-blue-600 transition duration-300">3</div>
+                        <div>
+                            <h4 class="font-bold text-lg">Express Delivery</h4>
+                            <p class="text-blue-100 text-sm leading-relaxed mt-1">Verified leads are delivered to your dashboard within <span class="font-bold text-white bg-white/20 px-1 rounded">1-2 Hours</span>.</p>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- LIVE REQUEST STATUS (Premium Table) -->
+    <div class="mt-16">
+        <div class="flex items-center justify-between mb-6 px-2">
+            <div>
+                <h3 class="text-2xl font-bold text-slate-900">Live Mission Status</h3>
+                <p class="text-slate-500 text-sm">Real-time updates from your AI agents.</p>
+            </div>
+            <div class="flex items-center gap-2">
+                <span class="relative flex h-3 w-3">
+                  <span class="animate-ping absolute inline-flex h-full w-full rounded-full bg-green-400 opacity-75"></span>
+                  <span class="relative inline-flex rounded-full h-3 w-3 bg-green-500"></span>
+                </span>
+                <span class="text-xs font-bold text-green-600 uppercase tracking-wider">System Active</span>
+            </div>
+        </div>
+
+        <div class="bg-white rounded-3xl shadow-sm border border-slate-100 overflow-hidden">
+            <table class="w-full text-left text-sm">
+                <thead class="bg-slate-50 border-b border-slate-100">
+                    <tr>
+                        <th class="p-6 font-bold text-slate-500 uppercase text-xs tracking-wider">Mission Details</th>
+                        <th class="p-6 font-bold text-slate-500 uppercase text-xs tracking-wider hidden md:table-cell">Instructions</th>
+                        <th class="p-6 font-bold text-slate-500 uppercase text-xs tracking-wider text-right">Status</th>
+                    </tr>
+                </thead>
+                <tbody class="divide-y divide-slate-50">
+                    <template x-for="req in myRequests" :key="req.id">
+                        <tr class="hover:bg-blue-50/30 transition duration-200 group">
+                            <td class="p-6">
+                                <div class="flex items-center gap-4">
+                                    <div class="w-10 h-10 rounded-xl flex items-center justify-center text-lg shadow-sm"
+                                         :class="req.status === 'Delivered' ? 'bg-green-100 text-green-600' : 'bg-amber-100 text-amber-600'">
+                                        <span x-text="req.status === 'Delivered' ? '✓' : '⚡'"></span>
+                                    </div>
+                                    <div>
+                                        <div class="font-bold text-slate-900 text-base" x-text="req.niche"></div>
+                                        <div class="text-xs text-slate-500 font-bold uppercase tracking-wide mt-0.5" x-text="req.country"></div>
+                                        <div class="text-[10px] text-slate-400 mt-1" x-text="new Date(req.createdAt?.seconds * 1000).toLocaleString()"></div>
+                                    </div>
+                                </div>
+                            </td>
+                            <td class="p-6 hidden md:table-cell">
+                                <div class="bg-slate-50 p-3 rounded-xl border border-slate-100 text-slate-600 text-xs italic max-w-md truncate group-hover:bg-white transition" x-text="req.desc"></div>
+                                <div class="mt-2 flex gap-3 text-[10px] font-bold text-slate-400 uppercase tracking-wider">
+                                    <span>Qty: <span class="text-slate-700" x-text="req.qty"></span></span>
+                                    <span>•</span>
+                                    <span>Cost: <span class="text-slate-700" x-text="req.cost"></span> Cr</span>
+                                </div>
+                            </td>
+                            <td class="p-6 text-right">
+                                <div x-show="req.status === 'Pending'" class="inline-flex items-center gap-2 px-4 py-2 rounded-xl text-xs font-bold bg-amber-50 text-amber-700 border border-amber-100 shadow-sm">
+                                    <svg class="w-3 h-3 animate-spin" fill="none" viewBox="0 0 24 24"><circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle><path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path></svg>
+                                    Processing
+                                </div>
+                                <div x-show="req.status === 'Delivered'" class="inline-flex items-center gap-2 px-4 py-2 rounded-xl text-xs font-bold bg-green-50 text-green-700 border border-green-100 shadow-sm">
+                                    <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z"></path></svg>
+                                    Delivered
+                                </div>
+                            </td>
+                        </tr>
+                    </template>
+                    
+                    <tr x-show="myRequests.length === 0">
+                        <td colspan="3" class="p-12 text-center">
+                            <div class="w-16 h-16 bg-slate-50 text-slate-300 rounded-full flex items-center justify-center mx-auto mb-4">
+                                <svg class="w-8 h-8" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19.428 15.428a2 2 0 00-1.022-.547l-2.387-.477a6 6 0 00-3.86.517l-.318.158a6 6 0 01-3.86.517L6.05 15.21a2 2 0 00-1.806.547M8 4h8l-1 1v5.172a2 2 0 00.586 1.414l5 5c1.26 1.26.367 3.414-1.415 3.414H4.828c-1.782 0-2.674-2.154-1.414-3.414l5-5A2 2 0 009 10.172V5L8 4z"></path></svg>
+                            </div>
+                            <h4 class="text-lg font-bold text-slate-900">No Missions Active</h4>
+                            <p class="text-slate-500 mt-1">Fill the form above to deploy AI agents.</p>
+                        </td>
+                    </tr>
+                </tbody>
+            </table>
+        </div>
+    </div>
+</div>
+
+<!-- TAB 3: BILLING (Ultra-Premium Design) -->
+<div x-show="activeTab === 'billing'" class="fade-in-up max-w-6xl mx-auto">
+    <header class="mb-12 text-center">
+        <h2 class="text-4xl font-bold text-slate-900 tracking-tight">Simple, Transparent Pricing</h2>
+        <p class="text-slate-500 mt-3 text-lg">Choose the perfect plan to scale your lead generation.</p>
+    </header>
+
+    <div class="grid md:grid-cols-3 gap-8 items-start">
+        
+        <!-- PLAN 1: STARTER -->
+        <div class="bg-white p-8 rounded-3xl border border-slate-100 shadow-xl hover:-translate-y-2 transition-all duration-300 relative overflow-hidden group">
+            <div class="absolute top-0 left-0 w-full h-1.5 bg-gradient-to-r from-blue-400 to-cyan-400"></div>
+            
+            <h3 class="text-xl font-bold text-slate-800">Starter</h3>
+            <p class="text-sm text-slate-400 mt-1">For beginners & small teams</p>
+            
+            <div class="my-6">
+                <span class="text-4xl font-bold text-slate-900">₹<span x-text="plans.p1.price"></span></span>
+                <span class="text-slate-400">/one-time</span>
+            </div>
+
+            <div class="bg-blue-50 text-blue-700 px-4 py-3 rounded-xl font-bold text-center mb-8 flex items-center justify-center gap-2">
+                <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 10V3L4 14h7v7l9-11h-7z"></path></svg>
+                <span x-text="plans.p1.credits"></span> Credits
+            </div>
+
+            <ul class="space-y-4 mb-8 text-sm text-slate-600">
+                <li class="flex items-center gap-3"><div class="w-5 h-5 rounded-full bg-green-100 text-green-600 flex items-center justify-center text-xs font-bold">✓</div> Instant Access</li>
+                <li class="flex items-center gap-3"><div class="w-5 h-5 rounded-full bg-green-100 text-green-600 flex items-center justify-center text-xs font-bold">✓</div> Email Support</li>
+                <li class="flex items-center gap-3"><div class="w-5 h-5 rounded-full bg-green-100 text-green-600 flex items-center justify-center text-xs font-bold">✓</div> Lifetime Validity</li>
+            </ul>
+
+            <button @click="buyCredits(plans.p1.link)" class="w-full py-4 rounded-xl font-bold text-slate-600 bg-slate-100 hover:bg-slate-200 transition">Get Started</button>
+        </div>
+
+      <!-- PLAN 2: PROFESSIONAL (Featured - Dark Theme) -->
+    <div class="bg-slate-900 p-8 rounded-3xl shadow-2xl hover:-translate-y-2 transition-all duration-300 relative overflow-hidden group transform md:scale-105 border-4 border-blue-500/20 z-10">
+        <div class="absolute top-0 right-0 bg-gradient-to-l from-blue-500 to-indigo-600 text-white text-[10px] font-bold px-4 py-1.5 rounded-bl-xl uppercase tracking-wider">Most Popular</div>
+        
+        <h3 class="text-xl font-bold text-white">Professional</h3>
+        <p class="text-sm text-slate-400 mt-1">Best for growing agencies</p>
+        
+        <div class="my-6">
+            <span class="text-5xl font-bold text-white">₹<span x-text="plans.p2.price"></span></span>
+            <span class="text-slate-500">/one-time</span>
+        </div>
+
+        <div class="bg-gradient-to-r from-blue-600 to-indigo-600 text-white px-4 py-3 rounded-xl font-bold text-center mb-8 flex items-center justify-center gap-2 shadow-lg shadow-blue-900/50">
+            <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 10V3L4 14h7v7l9-11h-7z"></path></svg>
+            <span x-text="plans.p2.credits"></span> Credits
+        </div>
+
+        <ul class="space-y-4 mb-8 text-sm text-slate-300">
+            <li class="flex items-center gap-3"><div class="w-5 h-5 rounded-full bg-blue-500/20 text-blue-400 flex items-center justify-center text-xs font-bold">✓</div> Priority Support</li>
+            <li class="flex items-center gap-3"><div class="w-5 h-5 rounded-full bg-blue-500/20 text-blue-400 flex items-center justify-center text-xs font-bold">✓</div> Advanced AI Access</li>
+            <li class="flex items-center gap-3"><div class="w-5 h-5 rounded-full bg-blue-500/20 text-blue-400 flex items-center justify-center text-xs font-bold">✓</div> CSV Export Enabled</li>
+            <li class="flex items-center gap-3"><div class="w-5 h-5 rounded-full bg-blue-500/20 text-blue-400 flex items-center justify-center text-xs font-bold">✓</div> Lifetime Validity</li>
+        </ul>
+
+        <button @click="buyCredits(plans.p2.link)" class="w-full py-4 rounded-xl font-bold text-white bg-blue-600 hover:bg-blue-500 transition shadow-lg shadow-blue-600/30">Choose Professional</button>
+    </div>
+
+      
+        <!-- PLAN 3: BUSINESS -->
+        <div class="bg-white p-8 rounded-3xl border border-slate-100 shadow-xl hover:-translate-y-2 transition-all duration-300 relative overflow-hidden group">
+            <div class="absolute top-0 left-0 w-full h-1.5 bg-gradient-to-r from-purple-400 to-pink-400"></div>
+            
+            <h3 class="text-xl font-bold text-slate-800">Business</h3>
+            <p class="text-sm text-slate-400 mt-1">For large scale extraction</p>
+            
+            <div class="my-6">
+                <span class="text-4xl font-bold text-slate-900">₹<span x-text="plans.p3.price"></span></span>
+                <span class="text-slate-400">/one-time</span>
+            </div>
+
+            <div class="bg-purple-50 text-purple-700 px-4 py-3 rounded-xl font-bold text-center mb-8 flex items-center justify-center gap-2">
+                <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 21V5a2 2 0 00-2-2H7a2 2 0 00-2 2v16m14 0h2m-2 0h-5m-9 0H3m2 0h5M9 7h1m-1 4h1m4-4h1m-1 4h1m-5 10v-5a1 1 0 011-1h2a1 1 0 011 1v5m-4 0h4"></path></svg>
+                <span x-text="plans.p3.credits"></span> Credits
+            </div>
+
+            <ul class="space-y-4 mb-8 text-sm text-slate-600">
+                <li class="flex items-center gap-3"><div class="w-5 h-5 rounded-full bg-purple-100 text-purple-600 flex items-center justify-center text-xs font-bold">✓</div> Dedicated Manager</li>
+                <li class="flex items-center gap-3"><div class="w-5 h-5 rounded-full bg-purple-100 text-purple-600 flex items-center justify-center text-xs font-bold">✓</div> Bulk API Access</li>
+                <li class="flex items-center gap-3"><div class="w-5 h-5 rounded-full bg-purple-100 text-purple-600 flex items-center justify-center text-xs font-bold">✓</div> Custom Reports</li>
+            </ul>
+
+            <button @click="buyCredits(plans.p3.link)" class="w-full py-4 rounded-xl font-bold text-white bg-slate-900 hover:bg-slate-800 transition">Contact Sales</button>
+        </div>
+
+    </div>
+</div>
+
+
+            <!-- TAB 4: HELP (Fixed HTML) -->
+            <div x-show="activeTab === 'help'" class="fade-in-up max-w-2xl mx-auto">
+                <header class="mb-8 text-center">
+                    <h2 class="text-3xl font-bold text-slate-900">Support Center</h2>
+                    <p class="text-slate-500 mt-2">Chat with us on WhatsApp.</p>
+                </header>
+
+                <div class="bg-white p-8 rounded-3xl border border-slate-100 shadow-xl relative overflow-hidden">
+                    <div class="absolute top-0 right-0 w-40 h-40 bg-green-50 rounded-full blur-3xl -mr-10 -mt-10 pointer-events-none"></div>
+                    <div class="relative z-10 space-y-6">
+                        <div>
+                            <label class="block text-xs font-bold text-slate-500 uppercase tracking-wider mb-2">Subject</label>
+                            <input x-model="help.subject" type="text" placeholder="e.g. Bug Report" class="w-full p-4 rounded-xl bg-slate-50 border border-slate-200 focus:border-green-500 outline-none font-bold">
+                        </div>
+                        <div>
+                            <label class="block text-xs font-bold text-slate-500 uppercase tracking-wider mb-2">Description</label>
+                            <textarea x-model="help.desc" rows="4" placeholder="Explain issue..." class="w-full p-4 rounded-xl bg-slate-50 border border-slate-200 focus:border-green-500 outline-none"></textarea>
+                        </div>
+                        <button @click="sendToWhatsApp" class="w-full bg-[#25D366] text-white py-4 rounded-xl font-bold shadow-lg hover:bg-[#128C7E] transition flex items-center justify-center gap-2">
+                            Send via WhatsApp
+                        </button>
+                    </div>
+                </div>
+            </div>
+
+        </main>
+    </div>
+
+<!-- Huntai Chat Widget Start -->
+<style>
+  /* Modern & Minimal CSS */
+  #huntai-widget { font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif; }
+  
+  /* Floating Button */
+  .huntai-btn {
+    position: fixed; bottom: 20px; right: 20px; width: 60px; height: 60px;
+    background: linear-gradient(135deg, #2563EB, #1E40AF); color: white;
+    border-radius: 50%; border: none; cursor: pointer;
+    box-shadow: 0 4px 12px rgba(0,0,0,0.15); z-index: 10000;
+    transition: transform 0.2s; display: flex; align-items: center; justify-content: center;
+  }
+  .huntai-btn:hover { transform: scale(1.05); }
+  
+  /* Chat Box */
+  .huntai-box {
+    position: fixed; bottom: 90px; right: 20px; width: 340px; height: 450px;
+    background: white; border-radius: 16px; box-shadow: 0 8px 24px rgba(0,0,0,0.12);
+    display: none; flex-direction: column; overflow: hidden; z-index: 10000;
+    border: 1px solid #f0f0f0;
+  }
+  
+  /* Header */
+  .h-header {
+    background: #fff; padding: 16px; border-bottom: 1px solid #eee;
+    display: flex; justify-content: space-between; align-items: center;
+  }
+  .h-title { font-weight: 700; color: #111; font-size: 16px; margin: 0; }
+  .h-sub { font-size: 12px; color: #2563EB; font-weight: 500; }
+  
+  /* Chat Area */
+  .h-messages { flex: 1; padding: 15px; overflow-y: auto; background: #fafafa; display: flex; flex-direction: column; gap: 10px; }
+  .msg { padding: 10px 14px; border-radius: 12px; font-size: 14px; line-height: 1.4; max-width: 80%; }
+  .msg.bot { background: #fff; color: #333; border: 1px solid #eee; align-self: flex-start; border-bottom-left-radius: 2px; }
+  .msg.user { background: #2563EB; color: white; align-self: flex-end; border-bottom-right-radius: 2px; }
+  
+  /* Input */
+  .h-input { padding: 12px; border-top: 1px solid #eee; background: white; display: flex; }
+  .h-input input { flex: 1; border: none; outline: none; font-size: 14px; }
+  .h-input button { background: none; border: none; color: #2563EB; font-weight: 600; cursor: pointer; }
+  
+  /* Floating Text */
+  .h-float-msg {
+    position: fixed; bottom: 35px; right: 90px; background: white;
+    padding: 8px 12px; border-radius: 8px; font-size: 13px; font-weight: 500;
+    box-shadow: 0 2px 8px rgba(0,0,0,0.1); z-index: 9999;
+    animation: fadeIn 0.5s ease-in-out;
+  }
+  @keyframes fadeIn { from { opacity: 0; transform: translateY(10px); } to { opacity: 1; transform: translateY(0); } }
+</style>
+
+<div id="huntai-widget">
+  <!-- Small Floating Message -->
+  <div class="h-float-msg" id="h-tooltip">👋 Hi! Need help with leads?</div>
+
+  <!-- Main Button -->
+  <button class="huntai-btn" onclick="toggleHuntai()">
+    <svg width="24" height="24" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path d="M21 11.5a8.38 8.38 0 0 1-.9 3.8 8.5 8.5 0 0 1-7.6 4.7 8.38 8.38 0 0 1-3.8-.9L3 21l1.9-5.7a8.38 8.38 0 0 1-.9-3.8 8.5 8.5 0 0 1 4.7-7.6 8.38 8.38 0 0 1 3.8-.9h.5a8.48 8.48 0 0 1 8 8v.5z"></path></svg>
+  </button>
+
+  <!-- Chat Window -->
+  <div class="huntai-box" id="h-box">
+    <div class="h-header">
+      <div>
+        <h3 class="h-title">Huntai Support</h3>
+        <span class="h-sub">Lead Gen Expert</span>
+      </div>
+      <button onclick="toggleHuntai()" style="border:none;background:none;font-size:20px;cursor:pointer;color:#666;">&times;</button>
+    </div>
+    <div class="h-messages" id="h-msgs">
+      <div class="msg bot">Hello! I'm here to help you get quality leads. Ask me anything about Huntai!</div>
+    </div>
+    <div class="h-input">
+      <input type="text" id="h-txt" placeholder="Type a message..." onkeypress="checkEnter(event)">
+      <button onclick="sendHuntai()">Send</button>
+    </div>
+  </div>
+</div>
+
+<script>
+  // ⚠️ REPALCE THIS WITH YOUR KEY
+  const API_KEY = "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"; 
+  
+  const box = document.getElementById('h-box');
+  const tooltip = document.getElementById('h-tooltip');
+  const msgs = document.getElementById('h-msgs');
+  const inp = document.getElementById('h-txt');
+  
+  // Strict System Prompt to fix "weird language" issues
+  let history = [{ role: "system", content: "You are a professional customer support AI for Huntai, a B2B lead generation platform. Answer strictly in professional English. Keep responses short (under 50 words). Do not use emojis excessively. Be helpful and polite." }];
+
+  function toggleHuntai() {
+    const isOpen = box.style.display === 'flex';
+    box.style.display = isOpen ? 'none' : 'flex';
+    tooltip.style.display = 'none';
+    if (!isOpen) inp.focus();
+  }
+
+  function checkEnter(e) { if(e.key === 'Enter') sendHuntai(); }
+
+  async function sendHuntai() {
+    const txt = inp.value.trim();
+    if (!txt) return;
+    
+    // Add User Msg
+    addMsg(txt, 'user');
+    inp.value = '';
+    history.push({ role: "user", content: txt });
+
+    // Loading...
+    const loadId = addMsg("...", 'bot');
+
+    try {
+      const req = await fetch("https://openrouter.ai/api/v1/chat/completions", {
+        method: "POST",
+        headers: { "Authorization": `Bearer ${API_KEY}`, "Content-Type": "application/json", "HTTP-Referer": window.location.href },
+        body: JSON.stringify({ model: "deepseek/deepseek-r1-0528:free", messages: history })
+      });
+      const res = await req.json();
+      
+      // Remove loading, add real response
+      document.getElementById(loadId).remove();
+      const reply = res.choices?.[0]?.message?.content || "Connection error.";
+      addMsg(reply, 'bot');
+      history.push({ role: "assistant", content: reply });
+
+    } catch (e) {
+      document.getElementById(loadId).innerText = "Error. Try again.";
+    }
+  }
+
+  function addMsg(text, type) {
+    const d = document.createElement('div');
+    d.className = `msg ${type}`;
+    d.innerText = text;
+    d.id = Math.random().toString(36).substr(2, 9);
+    msgs.appendChild(d);
+    msgs.scrollTop = msgs.scrollHeight;
+    return d.id;
+  }
+</script>
+<!-- Huntai Chat Widget End -->
+
+    <!-- JAVASCRIPT LOGIC -->
+    <script>
+        function dashboardApp() {
+            return {
+                sidebarOpen: false, activeTab: 'generate', user: null, userCredits: 0,
+                categories: [], countries: [],
+                // Default Plans
+                plans: { 
+                    p1: { price: 499, credits: 100, link: '' }, 
+                    p2: { price: 999, credits: 500, link: '' }, 
+                    p3: { price: 2999, credits: 2000, link: '' } 
+                },
+                filters: { category: '', country: '' }, qty: 10, leads: [], loading: false,
+                aiForm: { niche: '', country: '', desc: '', qty: 10 }, myRequests: [],
+                help: { subject: '', desc: '' },
+
+                initApp() {
+                    auth.onAuthStateChanged(u => {
+                        if (u) {
+                            this.user = u;
+                            db.collection('users').doc(u.uid).onSnapshot(d => this.userCredits = d.data()?.credits || 0);
+                            db.collection('config').doc('data').onSnapshot(d => { if(d.exists) { this.categories = d.data().categories||[]; this.countries = d.data().countries||[]; }});
+                            db.collection('config').doc('pricing').onSnapshot(d => { if(d.exists) this.plans = d.data(); });
+                            db.collection('requests').where('uid','==',u.uid).onSnapshot(s => {
+                                this.myRequests = s.docs.map(d=>({id:d.id, ...d.data()})).sort((a,b)=>(b.createdAt?.seconds||0)-(a.createdAt?.seconds||0));
+                            });
+                        } else window.location.href = 'auth.html';
+                    });
+                },
+
+         async generateLeads() {
+                    if(!this.filters.category||!this.filters.country) return alert("Select Filters");
+                    const cost = 6; if(this.userCredits < cost) return alert("Low Balance");
+                    this.loading=true;
+                    try {
+                        const histSnap = await db.collection('users').doc(this.user.uid).collection('extracted_leads').get();
+                        const existingIds = new Set(histSnap.docs.map(d=>d.id));
+                        const snap = await db.collection('leads').where('country','==',this.filters.country).where('category','==',this.filters.category).limit(parseInt(this.qty)*2).get();
+                        
+                        if(snap.empty) { alert("No leads found."); this.loading=false; return; }
+                        let unique=[]; snap.docs.forEach(d=>{if(!existingIds.has(d.id)) unique.push({id:d.id,...d.data()})});
+                        const final=unique.slice(0,parseInt(this.qty));
+                        if(final.length===0){ alert("No NEW leads."); this.loading=false; return; }
+
+                        const actualCost = final.length*6;
+                        if(this.userCredits < actualCost) { alert("Low Balance"); this.loading=false; return; }
+
+                        const batch = db.batch();
+                        batch.update(db.collection('users').doc(this.user.uid), {credits: firebase.firestore.FieldValue.increment(-actualCost)});
+                        final.forEach(l=>{ batch.set(db.collection('users').doc(this.user.uid).collection('extracted_leads').doc(l.id), {...l, extractedAt: firebase.firestore.FieldValue.serverTimestamp()}); });
+                        await batch.commit();
+                        this.leads = final;
+                        alert(`Found ${final.length} new leads.`);
+                    } catch(e) { console.error(e); alert("Error"); }
+                    this.loading=false;
+                },
+
+                exportCSV() {
+                    let csv = "Name,Email,Phone,Website\n";
+                    this.leads.forEach(r => csv += `${r.name},${r.gmail},${r.phone},${r.website}\n`);
+                    const a = document.createElement("a"); a.href = encodeURI("data:text/csv;charset=utf-8,"+csv); a.download="leads.csv"; a.click();
+                },
+
+                async submitAIRequest() {
+                    const cost=this.aiForm.qty*10; if(!this.aiForm.niche) return alert("Fill fields"); if(this.userCredits<cost) return alert("Low Balance");
+                    if(confirm(`Cost: ${cost} Credits?`)) {
+                        const batch=db.batch();
+                        batch.update(db.collection('users').doc(this.user.uid),{credits:firebase.firestore.FieldValue.increment(-cost)});
+                        batch.set(db.collection('requests').doc(),{uid:this.user.uid, email:this.user.email, niche:this.aiForm.niche, country:this.aiForm.country, desc:this.aiForm.desc, qty:parseInt(this.aiForm.qty), cost:cost, status:'Pending', createdAt:firebase.firestore.FieldValue.serverTimestamp()});
+                        await batch.commit(); alert("Sent!"); this.aiForm.desc='';
+                    }
+                },
+
+                buyCredits(link) { if(!link) return alert("Contact Admin"); localStorage.setItem('hunt_payment_pending','true'); window.open(link,'_blank'); },
+                
+                sendToWhatsApp() {
+                    if(!this.help.subject) return alert("Fill Subject");
+                    window.open(`https://wa.me/918133846969?text=*Report*%0AUser:${this.user.email}%0ASubject:${this.help.subject}%0ADesc:${this.help.desc}`, '_blank');
+                    this.help={subject:'', desc:''};
+                },
+
+                logout() { auth.signOut().then(()=>window.location.href='auth.html'); }
+            }
+        }
+    </script>
+</body>
+</html>

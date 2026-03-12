@@ -1,0 +1,403 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>HuntAI Admin | Master Control</title>
+    <!-- Dependencies -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script defer src="https://cdn.jsdelivr.net/npm/alpinejs@3.x.x/dist/cdn.min.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-app.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-auth.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-firestore.js"></script>
+    <script src="js/config.js"></script>
+    <link rel="stylesheet" href="css/style.css">
+    <script>checkAdminAccess();</script>
+</head>
+<body class="bg-slate-100 text-slate-800 font-sans" x-data="adminPanel()" x-init="initAdmin()" x-cloak>
+
+    <!-- Navbar -->
+    <nav class="bg-white border-b border-slate-200 px-6 py-4 flex justify-between items-center sticky top-0 z-50 shadow-sm">
+        <div class="flex items-center gap-3">
+            <div class="bg-slate-900 text-white font-bold px-3 py-1 rounded text-sm tracking-wide">ADMIN</div>
+            <span class="font-bold text-lg text-slate-700">HuntAI Dashboard</span>
+        </div>
+        <div class="flex bg-slate-100 p-1 rounded-lg">
+            <button @click="tab='users'" :class="tab==='users'?'bg-white shadow text-blue-700':''" class="px-3 py-2 rounded text-sm font-bold transition">Users</button>
+            <button @click="tab='leads'" :class="tab==='leads'?'bg-white shadow text-blue-700':''" class="px-3 py-2 rounded text-sm font-bold transition">Leads DB</button>
+            <button @click="tab='requests'" :class="tab==='requests'?'bg-white shadow text-blue-700':''" class="px-3 py-2 rounded text-sm font-bold transition">AI Requests</button>
+            <button @click="tab='subs'" :class="tab==='subs'?'bg-white shadow text-blue-700':''" class="px-3 py-2 rounded text-sm font-bold transition">Subscriptions</button>
+            <button @click="tab='config'" :class="tab==='config'?'bg-white shadow text-blue-700':''" class="px-3 py-2 rounded text-sm font-bold transition">Settings</button>
+        </div>
+        <button @click="logout" class="text-red-600 font-bold text-sm hover:underline">Logout</button>
+    </nav>
+
+    <div class="max-w-7xl mx-auto p-6">
+
+        <!-- TAB 1: USERS -->
+        <div x-show="tab === 'users'" class="fade-in-up space-y-4">
+            <h2 class="text-2xl font-bold">User Analytics</h2>
+            <div class="bg-white rounded-xl shadow overflow-hidden">
+                <table class="w-full text-left text-sm">
+                    <thead class="bg-slate-50 border-b">
+                        <tr><th class="p-4">User</th><th class="p-4">Business Info</th><th class="p-4">Credits</th><th class="p-4">Action</th></tr>
+                    </thead>
+                    <tbody class="divide-y divide-slate-100">
+                        <template x-for="u in users">
+                            <tr class="hover:bg-slate-50">
+                                <td class="p-4">
+                                    <div class="font-bold" x-text="u.data.name"></div>
+                                    <div class="text-xs text-blue-600" x-text="u.data.email"></div>
+                                    <div class="text-[10px] text-slate-400">Joined: <span x-text="new Date(u.data.createdAt?.seconds*1000).toLocaleDateString()"></span></div>
+                                </td>
+                                <td class="p-4 text-xs">
+                                    <div>Biz: <span x-text="u.data.business"></span></div>
+                                    <div>Src: <span x-text="u.data.source"></span></div>
+                                    <div class="text-slate-400">IP: <span x-text="u.data.ip"></span></div>
+                                </td>
+                                <td class="p-4">
+                                    <div class="flex gap-2">
+                                        <input type="number" x-model="u.data.credits" class="w-16 border p-1 rounded text-center">
+                                        <button @click="updateCredits(u.id, u.data.credits)" class="bg-green-100 text-green-700 px-2 py-1 rounded font-bold text-xs">Save</button>
+                                    </div>
+                                </td>
+                                <td class="p-4"><button @click="deleteUser(u.id)" class="text-red-500 font-bold text-xs">Block</button></td>
+                            </tr>
+                        </template>
+                    </tbody>
+                </table>
+            </div>
+        </div>
+
+        <!-- TAB 2: LEADS (With Edit) -->
+        <div x-show="tab === 'leads'" class="fade-in-up space-y-4">
+            <div class="flex justify-between items-center">
+                <h2 class="text-2xl font-bold">Leads Database</h2>
+                <button @click="openModal()" class="bg-blue-600 text-white px-4 py-2 rounded font-bold shadow">+ Add Lead</button>
+            </div>
+            <div class="bg-white rounded-xl shadow overflow-x-auto">
+                <table class="w-full text-left text-sm">
+                    <thead class="bg-slate-50 border-b"><tr><th class="p-4">Company</th><th class="p-4">Socials</th><th class="p-4">Contact</th><th class="p-4">Actions</th></tr></thead>
+                    <tbody class="divide-y divide-slate-100">
+                        <template x-for="l in leads">
+                            <tr class="hover:bg-slate-50">
+                                <td class="p-4">
+                                    <div class="font-bold" x-text="l.data.name"></div>
+                                    <div class="text-xs text-slate-500"><span x-text="l.data.country"></span> • <span x-text="l.data.category"></span></div>
+                                </td>
+                                <td class="p-4 flex gap-1 text-xs font-bold">
+                                    <span x-show="l.data.facebook" class="text-blue-600 bg-blue-50 px-1 rounded">FB</span>
+                                    <span x-show="l.data.instagram" class="text-pink-600 bg-pink-50 px-1 rounded">IG</span>
+                                    <span x-show="l.data.linkedin" class="text-blue-800 bg-blue-100 px-1 rounded">LI</span>
+                                </td>
+                                <td class="p-4 text-xs">
+                                    <div x-text="l.data.gmail"></div>
+                                    <div x-text="l.data.phone"></div>
+                                </td>
+                                <td class="p-4">
+                                    <button @click="openModal(l)" class="text-blue-600 font-bold mr-2">Edit</button>
+                                    <button @click="deleteLead(l.id)" class="text-red-500 font-bold">Del</button>
+                                </td>
+                            </tr>
+                        </template>
+                    </tbody>
+                </table>
+            </div>
+        </div>
+
+        <!-- TAB 3: REQUESTS -->
+        <div x-show="tab === 'requests'" class="fade-in-up space-y-4">
+            <h2 class="text-2xl font-bold">AI Requests</h2>
+            <div class="grid gap-4">
+                <template x-for="r in requests">
+                    <div class="bg-white p-4 rounded shadow border border-slate-200 flex justify-between items-start">
+                        <div>
+                            <div class="text-xs font-bold text-slate-500" x-text="r.data.email"></div>
+                            <div class="font-bold text-lg text-blue-700" x-text="r.data.niche + ' (' + r.data.country + ')'"></div>
+                            <p class="text-sm italic text-slate-600" x-text="r.data.desc"></p>
+                            <div class="mt-1 text-xs">Qty: <span x-text="r.data.qty"></span> | Cost: <span x-text="r.data.cost"></span> Cr</div>
+                        </div>
+                        <div>
+                            <span x-text="r.data.status" :class="r.data.status==='Pending'?'bg-yellow-100 text-yellow-800':'bg-green-100 text-green-800'" class="px-2 py-1 rounded text-xs font-bold"></span>
+                            <button x-show="r.data.status==='Pending'" @click="markDelivered(r.id)" class="block mt-2 bg-blue-600 text-white px-2 py-1 rounded text-xs">Mark Done</button>
+                        </div>
+                    </div>
+                </template>
+            </div>
+        </div>
+
+    <!-- TAB 4: PRICING MANAGER (Hardcoded Edit) -->
+<div x-show="tab === 'subs'" class="fade-in-up max-w-4xl mx-auto">
+    <h2 class="text-2xl font-bold text-slate-800 mb-6">Manage Subscription Pricing</h2>
+    
+    <div class="space-y-6">
+        
+        <!-- PLAN 1 -->
+        <div class="bg-white p-6 rounded-xl border border-slate-200 shadow-sm flex items-center gap-4">
+            <div class="w-12 h-12 bg-blue-100 text-blue-600 rounded-full flex items-center justify-center font-bold">1</div>
+            <div class="flex-1 grid grid-cols-3 gap-4">
+                <div><label class="text-xs font-bold">Price (₹)</label><input x-model="plans.p1.price" type="number" class="w-full border p-2 rounded"></div>
+                <div><label class="text-xs font-bold">Credits</label><input x-model="plans.p1.credits" type="number" class="w-full border p-2 rounded"></div>
+                <div><label class="text-xs font-bold">Link (Razorpay)</label><input x-model="plans.p1.link" type="text" class="w-full border p-2 rounded"></div>
+            </div>
+        </div>
+
+        <!-- PLAN 2 -->
+        <div class="bg-white p-6 rounded-xl border border-slate-200 shadow-sm flex items-center gap-4">
+            <div class="w-12 h-12 bg-slate-900 text-white rounded-full flex items-center justify-center font-bold">2</div>
+            <div class="flex-1 grid grid-cols-3 gap-4">
+                <div><label class="text-xs font-bold">Price (₹)</label><input x-model="plans.p2.price" type="number" class="w-full border p-2 rounded"></div>
+                <div><label class="text-xs font-bold">Credits</label><input x-model="plans.p2.credits" type="number" class="w-full border p-2 rounded"></div>
+                <div><label class="text-xs font-bold">Link (Razorpay)</label><input x-model="plans.p2.link" type="text" class="w-full border p-2 rounded"></div>
+            </div>
+        </div>
+
+        <!-- PLAN 3 -->
+        <div class="bg-white p-6 rounded-xl border border-slate-200 shadow-sm flex items-center gap-4">
+            <div class="w-12 h-12 bg-purple-100 text-purple-600 rounded-full flex items-center justify-center font-bold">3</div>
+            <div class="flex-1 grid grid-cols-3 gap-4">
+                <div><label class="text-xs font-bold">Price (₹)</label><input x-model="plans.p3.price" type="number" class="w-full border p-2 rounded"></div>
+                <div><label class="text-xs font-bold">Credits</label><input x-model="plans.p3.credits" type="number" class="w-full border p-2 rounded"></div>
+                <div><label class="text-xs font-bold">Link (Razorpay)</label><input x-model="plans.p3.link" type="text" class="w-full border p-2 rounded"></div>
+            </div>
+        </div>
+
+        <button @click="savePricing" class="w-full bg-blue-600 text-white py-3 rounded-xl font-bold shadow hover:bg-blue-700 transition">Save Changes</button>
+    </div>
+</div>
+
+        <!-- TAB 5: CONFIG (Payment + Country/Category) -->
+        <div x-show="tab === 'config'" class="fade-in-up space-y-6">
+            <h2 class="text-2xl font-bold">Settings</h2>
+            <div class="grid md:grid-cols-2 gap-8">
+                <!-- Payment Page Settings -->
+                <div class="bg-white p-6 rounded-xl shadow-sm border border-slate-200 col-span-2 md:col-span-1">
+                    <h3 class="font-bold text-lg mb-4 text-purple-700">Payment Page Credits</h3>
+                    <div class="space-y-3">
+                        <div class="flex justify-between items-center"><span class="font-bold text-sm">pay1.html</span><input type="number" x-model="payConfig.pay1" class="border p-1 w-20 rounded text-center"></div>
+                        <div class="flex justify-between items-center"><span class="font-bold text-sm">pay2.html</span><input type="number" x-model="payConfig.pay2" class="border p-1 w-20 rounded text-center"></div>
+                        <div class="flex justify-between items-center"><span class="font-bold text-sm">pay3.html</span><input type="number" x-model="payConfig.pay3" class="border p-1 w-20 rounded text-center"></div>
+                        <button @click="savePayConfig" class="w-full bg-purple-600 text-white py-2 rounded font-bold mt-2">Save Settings</button>
+                    </div>
+                </div>
+
+                <!-- Countries/Categories -->
+                <div class="bg-white p-6 rounded-xl shadow-sm border border-slate-200">
+                    <h3 class="font-bold mb-2">Manage Lists</h3>
+                    <div class="mb-4">
+                        <div class="flex gap-2 mb-2"><input x-model="newCountry" placeholder="Country" class="border p-1 flex-1 rounded"><button @click="addItem('countries',newCountry)" class="bg-black text-white px-2 rounded">Add</button></div>
+                        <div class="flex flex-wrap gap-1"><template x-for="c in config.countries"><span class="bg-gray-200 px-2 rounded text-xs cursor-pointer hover:bg-red-200" @click="removeItem('countries',c)" x-text="c"></span></template></div>
+                    </div>
+                    <div>
+                        <div class="flex gap-2 mb-2"><input x-model="newCategory" placeholder="Category" class="border p-1 flex-1 rounded"><button @click="addItem('categories',newCategory)" class="bg-black text-white px-2 rounded">Add</button></div>
+                        <div class="flex flex-wrap gap-1"><template x-for="c in config.categories"><span class="bg-gray-200 px-2 rounded text-xs cursor-pointer hover:bg-red-200" @click="removeItem('categories',c)" x-text="c"></span></template></div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+    </div>
+
+    <!-- MODAL: LEAD (Add/Edit) -->
+    <div x-show="showModal" class="fixed inset-0 bg-black/50 z-50 flex items-center justify-center p-4" style="display:none">
+        <div class="bg-white rounded-xl w-full max-w-lg p-6 shadow-2xl h-[90vh] overflow-y-auto">
+            <h3 class="font-bold text-xl mb-4" x-text="isEditing?'Edit Lead':'Add Lead'"></h3>
+            <div class="space-y-3">
+                <input x-model="form.name" placeholder="Name" class="w-full border p-2 rounded">
+                <select x-model="form.country" class="w-full border p-2 rounded"><option value="">Country</option><template x-for="c in config.countries"><option :value="c" x-text="c"></option></template></select>
+                <select x-model="form.category" class="w-full border p-2 rounded"><option value="">Category</option><template x-for="c in config.categories"><option :value="c" x-text="c"></option></template></select>
+                <input x-model="form.gmail" placeholder="Email" class="w-full border p-2 rounded">
+                <input x-model="form.phone" placeholder="Phone" class="w-full border p-2 rounded">
+                <input x-model="form.website" placeholder="Website" class="w-full border p-2 rounded">
+                <div class="pt-2 font-bold text-xs text-slate-500">SOCIALS</div>
+                <input x-model="form.facebook" placeholder="Facebook URL" class="w-full border p-2 rounded bg-blue-50">
+                <input x-model="form.instagram" placeholder="Instagram URL" class="w-full border p-2 rounded bg-pink-50">
+                <input x-model="form.linkedin" placeholder="LinkedIn URL" class="w-full border p-2 rounded bg-blue-100">
+            </div>
+            <div class="flex justify-end gap-2 mt-4">
+                <button @click="showModal=false" class="text-gray-500">Cancel</button>
+                <button @click="saveLead" class="bg-blue-600 text-white px-4 py-2 rounded font-bold">Save</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- MODAL: PLAN (Create) -->
+    <div x-show="showSubModal" class="fixed inset-0 bg-black/50 z-50 flex items-center justify-center p-4" style="display:none">
+        <div class="bg-white rounded-xl w-full max-w-md p-6 shadow-2xl">
+            <h3 class="font-bold text-xl mb-4">Create Plan</h3>
+            <div class="space-y-3">
+                <input x-model="newPlan.name" placeholder="Name (e.g. Pro)" class="w-full border p-2 rounded">
+                <input x-model="newPlan.price" placeholder="Price (e.g. 1999)" type="number" class="w-full border p-2 rounded">
+                <input x-model="newPlan.credits" placeholder="Credits (e.g. 1000)" type="number" class="w-full border p-2 rounded">
+                <input x-model="newPlan.features" placeholder="Features (e.g. 24/7 Support)" class="w-full border p-2 rounded">
+                <input x-model="newPlan.link" placeholder="Payment Link URL" class="w-full border p-2 rounded">
+            </div>
+            <div class="flex justify-end gap-2 mt-4">
+                <button @click="showSubModal=false" class="text-gray-500">Cancel</button>
+                <button @click="createPlan" class="bg-slate-900 text-white px-4 py-2 rounded font-bold">Create</button>
+            </div>
+        </div>
+    </div>
+
+
+<script>
+    function adminPanel() {
+        return {
+            // --- UI State ---
+            tab: 'users',
+            
+            // --- Data Containers ---
+            users: [],
+            leads: [],
+            requests: [],
+            
+            // --- Config Data ---
+            config: { countries: [], categories: [] },
+            payConfig: { pay1: 0, pay2: 0, pay3: 0 },
+            
+            // --- Subscription Plans (Default Structure) ---
+            plans: {
+                p1: { price: 499, credits: 100, link: '' },
+                p2: { price: 999, credits: 500, link: '' },
+                p3: { price: 2999, credits: 2000, link: '' }
+            },
+
+            // --- Modal States ---
+            showModal: false,
+            isEditing: false,
+            currentLeadId: null,
+            
+            // --- Form Data ---
+            form: { name: '', country: '', category: '', gmail: '', phone: '', website: '', facebook: '', instagram: '', linkedin: '' },
+            newCountry: '',
+            newCategory: '',
+
+            // --- INITIALIZATION ---
+            initAdmin() {
+                // 1. Fetch Users (With IP & Business Data)
+                db.collection('users').orderBy('createdAt', 'desc').onSnapshot(snap => {
+                    this.users = snap.docs.map(d => ({ id: d.id, data: d.data() }));
+                });
+
+                // 2. Fetch Leads
+                db.collection('leads').limit(50).onSnapshot(snap => {
+                    this.leads = snap.docs.map(d => ({ id: d.id, data: d.data() }));
+                });
+
+                // 3. Fetch Requests
+                db.collection('requests').orderBy('createdAt', 'desc').onSnapshot(snap => {
+                    this.requests = snap.docs.map(d => ({ id: d.id, data: d.data() }));
+                });
+
+                // 4. Fetch Config (Includes Countries, Categories, PayConfig)
+                db.collection('config').doc('data').onSnapshot(doc => {
+                    if (doc.exists) {
+                        const d = doc.data();
+                        this.config.countries = d.countries || [];
+                        this.config.categories = d.categories || [];
+                        if(d.payConfig) this.payConfig = d.payConfig;
+                    } else {
+                        // Create if missing
+                        db.collection('config').doc('data').set({ countries: [], categories: [], payConfig: { pay1: 0, pay2: 0, pay3: 0 } });
+                    }
+                });
+
+                // 5. Fetch Pricing (FIX: Ab ye 'config/pricing' se data layega)
+                db.collection('config').doc('pricing').onSnapshot(doc => {
+                    if(doc.exists) {
+                        this.plans = doc.data();
+                    }
+                });
+            },
+
+            // --- FEATURE 1: USER MANAGEMENT ---
+            updateCredits(uid, val) {
+                db.collection('users').doc(uid).update({ credits: parseInt(val) })
+                  .then(() => alert("Credits Updated!"));
+            },
+            deleteUser(uid) {
+                if(confirm("Are you sure? This will delete the user and block their IP.")) {
+                    db.collection('users').doc(uid).delete();
+                }
+            },
+
+            // --- FEATURE 2: LEAD MANAGEMENT (CRUD) ---
+            openModal(lead = null) {
+                this.showModal = true;
+                if(lead) {
+                    this.isEditing = true;
+                    this.currentLeadId = lead.id;
+                    const d = lead.data;
+                    this.form = {
+                        name: d.name||'', country: d.country||'', category: d.category||'',
+                        gmail: d.gmail||'', phone: d.phone||'', website: d.website||'',
+                        facebook: d.facebook||'', instagram: d.instagram||'', linkedin: d.linkedin||''
+                    };
+                } else {
+                    this.isEditing = false;
+                    this.currentLeadId = null;
+                    this.form = { name:'', country:'', category:'', gmail:'', phone:'', website:'', facebook:'', instagram:'', linkedin:'' };
+                }
+            },
+            saveLead() {
+                if(!this.form.name || !this.form.country) return alert("Business Name & Country Required");
+                
+                const payload = { ...this.form };
+                
+                if(this.isEditing) {
+                    db.collection('leads').doc(this.currentLeadId).update(payload)
+                      .then(() => { this.showModal = false; alert("Lead Updated"); });
+                } else {
+                    payload.createdAt = firebase.firestore.FieldValue.serverTimestamp();
+                    db.collection('leads').add(payload)
+                      .then(() => { this.showModal = false; alert("Lead Added"); });
+                }
+            },
+            deleteLead(id) {
+                if(confirm("Delete this lead permanently?")) db.collection('leads').doc(id).delete();
+            },
+
+            // --- FEATURE 3: REQUEST MANAGEMENT ---
+            markDelivered(id) {
+                if(confirm("Mark as Delivered?")) db.collection('requests').doc(id).update({ status: 'Delivered' });
+            },
+
+            // --- FEATURE 4: PRICING & CONFIG MANAGEMENT ---
+            savePricing() {
+                // Save Plans to 'config/pricing' doc
+                db.collection('config').doc('pricing').set(this.plans)
+                  .then(() => alert("Subscription Pricing Updated! Users will see new prices instantly."));
+            },
+            
+            savePayConfig() {
+                // Save Pay Page Credits
+                db.collection('config').doc('data').set({
+                    payConfig: {
+                        pay1: parseInt(this.payConfig.pay1),
+                        pay2: parseInt(this.payConfig.pay2),
+                        pay3: parseInt(this.payConfig.pay3)
+                    }
+                }, { merge: true }).then(() => alert("Payment Page Credits Saved!"));
+            },
+
+            // --- Helper: Add/Remove List Items ---
+            addItem(field, value) {
+                if(!value) return;
+                db.collection('config').doc('data').update({
+                    [field]: firebase.firestore.FieldValue.arrayUnion(value)
+                });
+            },
+            removeItem(field, value) {
+                if(confirm("Remove item?")) {
+                    db.collection('config').doc('data').update({
+                        [field]: firebase.firestore.FieldValue.arrayRemove(value)
+                    });
+                }
+            },
+
+            // --- LOGOUT ---
+            logout() {
+                auth.signOut().then(() => window.location.href = 'auth.html');
+            }
+        }
+    }
+</script>

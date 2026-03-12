@@ -1,0 +1,67 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>Processing Payment...</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-app.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-auth.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-firestore.js"></script>
+    <script src="js/config.js"></script>
+</head>
+<body class="bg-gray-50 h-screen flex flex-col items-center justify-center">
+
+    <div id="status" class="text-center">
+        <div class="animate-spin rounded-full h-16 w-16 border-b-2 border-blue-600 mx-auto mb-4"></div>
+        <h2 class="text-xl font-bold text-gray-800">Verifying Transaction...</h2>
+        <p class="text-gray-500">Do not close this window.</p>
+    </div>
+
+    <script>
+        // PAGE CONFIG (Change this for pay2.html to 'pay2', etc.)
+        const PAGE_KEY = 'pay2'; 
+
+        auth.onAuthStateChanged(async user => {
+            if (user) {
+                // Security Check: Did user come from Dashboard?
+                const isLegit = localStorage.getItem('hunt_payment_pending');
+
+                if (isLegit === 'true') {
+                    try {
+                        // 1. Get Credit Amount from Admin Config
+                        const configDoc = await db.collection('config').doc('data').get();
+                        const creditsToAdd = configDoc.data().payConfig[PAGE_KEY] || 0;
+
+                        if(creditsToAdd > 0) {
+                            // 2. Add Credits
+                            await db.collection('users').doc(user.uid).update({
+                                credits: firebase.firestore.FieldValue.increment(creditsToAdd)
+                            });
+                            
+                            // 3. Clear Security Flag
+                            localStorage.removeItem('hunt_payment_pending');
+
+                            document.getElementById('status').innerHTML = `
+                                <div class="text-green-500 text-5xl mb-4">✓</div>
+                                <h2 class="text-2xl font-bold">Payment Successful!</h2>
+                                <p class="text-lg text-slate-600 mt-2">${creditsToAdd} Credits Added.</p>
+                                <a href="dashboard.html" class="inline-block mt-6 bg-slate-900 text-white px-6 py-2 rounded font-bold">Go to Dashboard</a>
+                            `;
+                        } else {
+                            alert("Configuration Error: Contact Admin");
+                        }
+                    } catch (e) {
+                        alert("Error adding credits: " + e.message);
+                    }
+                } else {
+                    // Block direct access
+                    document.body.innerHTML = "<h1 class='text-center mt-20 text-red-500 font-bold'>403 Forbidden: Invalid Access</h1>";
+                    setTimeout(() => window.location.href = 'dashboard.html', 2000);
+                }
+            } else {
+                window.location.href = 'auth.html';
+            }
+        });
+    </script>
+</body>
+</html>
