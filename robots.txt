@@ -1,0 +1,73 @@
+User-agent: *
+Allow: /
+
+# =========================
+# 🔍 Crawl Optimization
+# =========================
+
+# Allow important assets
+Allow: /assets/
+Allow: /images/
+Allow: /css/
+Allow: /js/
+
+# Allow blog & main pages
+Allow: /blog/
+Allow: /free
+Allow: /roadmap
+Allow: /about
+Allow: /contact
+
+# =========================
+# 🚫 Block Sensitive Areas (Optional Safety)
+# =========================
+
+Disallow: /admin/
+Disallow: /private/
+Disallow: /dashboard/
+Disallow: /api/
+Disallow: /login/
+
+# =========================
+# ⚡ Performance Control
+# =========================
+
+Crawl-delay: 2
+
+# =========================
+# 🗺️ Sitemap
+# =========================
+
+Sitemap: https://www.huntai.in/sitemap.xml
+
+# =========================
+# 🤖 Specific Bots (Optional Boost)
+# =========================
+
+User-agent: Googlebot
+Allow: /
+
+User-agent: Bingbot
+Allow: /
+
+User-agent: Slurp
+Allow: /
+
+# =========================
+# 🧠 AI Crawlers (Future Proof)
+# =========================
+
+User-agent: GPTBot
+Allow: /
+
+User-agent: ChatGPT-User
+Allow: /
+
+User-agent: Google-Extended
+Allow: /
+
+User-agent: CCBot
+Allow: /
+
+User-agent: anthropic-ai
+Allow: /
