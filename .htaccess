@@ -1,0 +1,3 @@
+RewriteEngine On
+RewriteCond %{HTTP_HOST} ^huntai\.in [NC]
+RewriteRule ^(.*)$ https://www.huntai.in/$1 [L,R=301]
