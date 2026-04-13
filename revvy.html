@@ -1,0 +1,82 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Revvy Logos</title>
+  <style>
+    * { box-sizing: border-box; }
+    body {
+      margin: 0;
+      font-family: Arial, sans-serif;
+      background: #f5f7fb;
+      color: #111827;
+    }
+    .container {
+      max-width: 1200px;
+      margin: 0 auto;
+      padding: 40px 20px;
+    }
+    h1 {
+      text-align: center;
+      margin-bottom: 10px;
+      font-size: 36px;
+    }
+    p {
+      text-align: center;
+      margin-bottom: 40px;
+      color: #4b5563;
+      font-size: 16px;
+    }
+    .grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(320px, 1fr));
+      gap: 24px;
+    }
+    .card {
+      background: white;
+      border-radius: 20px;
+      padding: 20px;
+      box-shadow: 0 10px 30px rgba(0,0,0,0.08);
+      border: 1px solid #e5e7eb;
+    }
+    .card h2 {
+      margin: 0 0 14px;
+      font-size: 20px;
+    }
+    img {
+      width: 100%;
+      height: auto;
+      display: block;
+      border-radius: 12px;
+      background: #fff;
+    }
+    .filename {
+      margin-top: 12px;
+      font-size: 14px;
+      color: #6b7280;
+      word-break: break-all;
+    }
+  </style>
+</head>
+<body>
+  <div class="container">
+    <h1>Revvy Logo Preview</h1>
+    <p>Both uploaded logo images are displayed below.</p>
+
+    <div class="grid">
+      <div class="card">
+        <h2>Logo 1</h2>
+        <img src="file_00000000634471fda40ae77d34a57b1a.png" alt="Revvy logo 1" />
+        <div class="filename">file_00000000634471fda40ae77d34a57b1a.png</div>
+      </div>
+
+      <div class="card">
+        <h2>Logo 2</h2>
+        <img src="file_000000004c0c71fdb99d1bd96f5643ad.png" alt="Revvy logo 2" />
+        <div class="filename">file_000000004c0c71fdb99d1bd96f5643ad.png</div>
+      </div>
+    </div>
+  </div>
+</body>
+</html>
